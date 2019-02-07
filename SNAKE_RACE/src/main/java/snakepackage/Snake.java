@@ -3,6 +3,7 @@ package snakepackage;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import enums.Direction;
 import enums.GridSize;
@@ -16,7 +17,7 @@ public class Snake extends Observable implements Runnable {
     //private Cell objective = null;
     private Cell start = null;
 
-    private boolean snakeEnd = false;
+    private AtomicBoolean snakeEnd = new AtomicBoolean(false);
 
     private int direction = Direction.NO_DIRECTION;
     private final int INIT_SIZE = 3;
@@ -26,6 +27,7 @@ public class Snake extends Observable implements Runnable {
     private boolean isSelected = false;
     private int growing = 0;
     public boolean goal = false;
+    private boolean pause=true;
 
     public Snake(int idt, Cell head, int direction) {
         this.idt = idt;
@@ -34,8 +36,12 @@ public class Snake extends Observable implements Runnable {
 
     }
 
-    public boolean isSnakeEnd() {
-        return snakeEnd;
+    public int getGrowing() {
+        return growing/3;
+    }
+
+    public synchronized AtomicBoolean isSnakeEnd() {
+            return snakeEnd;
     }
 
     private void generateSnake(Cell head) {
@@ -47,23 +53,32 @@ public class Snake extends Observable implements Runnable {
 
     @Override
     public void run() {
-        while (!snakeEnd) {
-            
-            snakeCalc();
 
-            //NOTIFY CHANGES TO GUI
-            setChanged();
-            notifyObservers();
-
-            try {
-                if (hasTurbo == true) {
-                    Thread.sleep(500 / 3);
-                } else {
-                    Thread.sleep(500);
+            while (!snakeEnd.get()) {
+                if(pause){
+                    try {
+                        synchronized (this){
+                            wait();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                snakeCalc();
+
+                //NOTIFY CHANGES TO GUI
+                setChanged();
+                notifyObservers();
+
+                try {
+                    if (hasTurbo == true) {
+                        Thread.sleep(500 / 3);
+                    } else {
+                        Thread.sleep(500);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
         }
         
@@ -103,7 +118,8 @@ public class Snake extends Observable implements Runnable {
             // crash
             System.out.println("[" + idt + "] " + "CRASHED AGAINST BARRIER "
                     + newCell.toString());
-            snakeEnd=true;
+            snakeEnd.set(true);
+            SnakeApp.getApp().snakeDead();
         }
     }
 
@@ -341,6 +357,15 @@ public class Snake extends Observable implements Runnable {
 
     public int getIdt() {
         return idt;
+    }
+
+    public synchronized  void pause(){
+        pause = true;
+    }
+
+    public synchronized void resume(){
+        pause = false;
+        notify();
     }
 
 }

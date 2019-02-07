@@ -1,0 +1,16 @@
+2.
+Condiciones de carrera:
+la variable snakeEnd :se lee contantemente 
+y ademas se cambia, podria pasar que al leer se cambie a falso pero lo reescribe con
+verdadero
+Uso incorrecto de colecciones:
+la coleccion de celulas debe
+ser consultado cocurrentemente ya que
+hay varios hilos consultandolo a al vez.
+Esperas activas innecasrio:
+No tiene que esperar que constantemente para que saber
+cuando una serpiente ha muerto
+3.Primero para la variable snakaend, se puso un que fuera 
+atomico y en los metodos get.
+Para el la lista de celulas, la lista se volverá atomicos.
+
