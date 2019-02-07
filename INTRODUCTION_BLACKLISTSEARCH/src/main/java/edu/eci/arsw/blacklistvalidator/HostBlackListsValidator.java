@@ -10,7 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.ArrayList;
+import javax.sql.rowset.spi.SyncResolver;
 /**
  *
  * @author hcadavid
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 public class HostBlackListsValidator {
 
     private static final int BLACK_LIST_ALARM_COUNT=5;
-    
+    private  LinkedList<Integer> blackListOcurrences = new LinkedList<>();
     /**
      * Check the given host's IP address in all the available black lists,
      * and report it as NOT Trustworthy when such IP was reported in at least
@@ -29,40 +30,60 @@ public class HostBlackListsValidator {
      * @param ipaddress suspicious host's IP address.
      * @return  Blacklists numbers where the given host's IP address was found.
      */
-    public List<Integer> checkHost(String ipaddress){
+    public List<Integer> checkHost(String ipaddress, int hilos){
         
-        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
+        ArrayList<Busqueda> busquedas = new ArrayList<Busqueda>();
+
+        HostBlacklistsDataSourceFacade skds = HostBlacklistsDataSourceFacade.getInstance();
+
+        int checkedListsCount = 0;
+        int servidores = skds.getRegisteredServersCount();
+        int nDeServidores = servidores / hilos;
+        int ini = 1;
+        int fin = nDeServidores;
         
-        int ocurrencesCount=0;
-        
-        HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
-        
-        int checkedListsCount=0;
-        
-        for (int i=0;i<skds.getRegisteredServersCount() && ocurrencesCount<BLACK_LIST_ALARM_COUNT;i++){
-            checkedListsCount++;
-            
-            if (skds.isInBlackListServer(i, ipaddress)){
-                
-                blackListOcurrences.add(i);
-                
-                ocurrencesCount++;
+
+        for (int i = 1; i <= hilos; i++) {
+                Busqueda a = new Busqueda(ini, fin, ipaddress, this);
+            busquedas.add(a);
+            a.start();
+            ini = fin;
+            if (fin + nDeServidores <= servidores) {
+                fin = fin + nDeServidores;
+            } else {
+                fin = servidores;
             }
         }
-        
-        if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
-            skds.reportAsNotTrustworthy(ipaddress);
+
+        try {
+            busquedas.get(busquedas.size() - 1).join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HostBlackListsValidator.class.getName()).log(Level.SEVERE, null, ex);
         }
-        else{
+        for (Busqueda b : busquedas) {
+            checkedListsCount = checkedListsCount + b.getCheckedListsCount();
+            blackListOcurrences.addAll(b.retornarOcurrencias());
+        }
+
+        if (blackListOcurrences.size() >= BLACK_LIST_ALARM_COUNT) {
+            skds.reportAsNotTrustworthy(ipaddress);
+        } else {
             skds.reportAsTrustworthy(ipaddress);
-        }                
-        
-        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});
-        
+        }
+
+        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount + 1, skds.getRegisteredServersCount()});
+
         return blackListOcurrences;
     }
-    
-    
+
+    public synchronized LinkedList<Integer> getBlackListOcurrences() {
+        return blackListOcurrences;
+    }
+
+    public synchronized void agregarOcurrencia(Integer i) {
+        blackListOcurrences.add(i);
+    }
+
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
     
     

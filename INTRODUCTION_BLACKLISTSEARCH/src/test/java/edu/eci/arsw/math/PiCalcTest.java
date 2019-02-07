@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package edu.eci.arsw.math;
 
 import org.junit.Before;
@@ -13,6 +14,7 @@ import static org.junit.Assert.*;
  *
  * @author hcadavid
  */
+/*
 public class PiCalcTest {
 
     public PiCalcTest() {
@@ -49,4 +51,4 @@ public class PiCalcTest {
         }
     }
 
-}
+}*/
