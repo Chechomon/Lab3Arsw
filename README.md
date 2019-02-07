@@ -67,6 +67,6 @@ The results were:
 
 The results can be seen in ANSWERS.txt.
 
-The respective start / pause / resume buttons can be seen in the following image:
+The respective start / pause / resume buttons can be seen in the options menu in the following image:
 
 ![](Imagenes/12.PNG)
