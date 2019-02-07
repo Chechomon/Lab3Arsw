@@ -12,8 +12,8 @@ public class Control extends Thread {
     
     private final static int NTHREADS = 3;
     private final static int MAXVALUE = 30000000;
-    private final static int TMILISECONDS = 5000;
-
+    public final static int TMILISECONDS = 5000;
+    public static long startTime= System.currentTimeMillis();
     private final int NDATA = MAXVALUE / NTHREADS;
 
     private PrimeFinderThread pft[];
@@ -36,8 +36,17 @@ public class Control extends Thread {
 
     @Override
     public void run() {
-        for(int i = 0;i < NTHREADS;i++ ) {
+        for (int i = 0; i < NTHREADS; i++) {
             pft[i].start();
+        }
+        try {
+            while (true) {
+                for (int i = 0; i < NTHREADS; i++) {
+                    pft[i].getListPrimes();
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
     
